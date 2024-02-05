@@ -1,0 +1,87 @@
+def label = "pipeline-${UUID.randomUUID().toString()}"
+
+podTemplate(label: label, nodeSelector:'key=cicd', containers: [
+    containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
+    containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl', command: 'cat', ttyEnabled: true)
+],
+volumes: [ 
+    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
+    hostPathVolume(mountPath: '/CI-CD', hostPath: '/home/ubuntu/CI-CD'),
+    //hostPathVolume(mountPath: '/etc/docker/daemon.json', hostPath: '/etc/docker/daemon.json'),
+    hostPathVolume(mountPath: '/etc/hosts', hostPath: '/etc/hosts'),
+]) {
+    node(label) {
+        stage('END') {
+            container('kubectl') { 
+                sh 'kubectl delete -f /CI-CD/signup-app/yaml/ingress.yaml'
+                sh 'kubectl delete -f /CI-CD/signup-app/yaml/tomcat/tomcat-service.yaml'
+                sh 'kubectl delete -f /CI-CD/signup-app/yaml/tomcat/tomcat-deployment.yaml'
+                
+                sh 'kubectl delete -f /CI-CD/signup-app/yaml/nginx/nginx-configmap.yaml'
+                sh 'kubectl delete -f /CI-CD/signup-app/yaml/nginx/nginx-service.yaml'
+                sh 'kubectl delete -f /CI-CD/signup-app/yaml/nginx/nginx-deployment.yaml'
+
+                sh 'kubectl delete -f /CI-CD/youtube-app/yaml/youtube-nginx-deployment.yaml'
+                sh 'kubectl delete -f /CI-CD/youtube-app/yaml/youtube-nginx-service.yaml'
+
+                sh 'echo The END'
+            }
+        }
+
+        /*stage('Docker login(nexus) & Docker Build') {
+            container('docker') {
+                //sh 'docker login 172.25.1.136:30678 -u admin -p Sniper13@$'
+
+                sh 'pwd'
+                sh 'docker images'
+
+                sh 'docker login nexus.cicd.svc.cluster.local:5000 -u admin -p Sniper13@$'
+
+                sh 'cd / && docker build -t tomcat-signup -f /CI-CD/signup-app/tomcat/Dockerfile .'
+                sh 'cd / && docker build -t nginx-signup -f /CI-CD/signup-app/nginx/Dockerfile .'
+                sh 'cd / && docker build -t nginx-youtube -f /CI-CD/youtube-app/Dockerfile .'
+            }
+        }
+
+        stage('Docker Tag & Image Push') {
+            container('docker') {
+                //sh 'ls -l /etc/docker/daemon.json'
+                sh 'docker tag tomcat-signup nexus.cicd.svc.cluster.local:5000/tomcat-signup' 
+                sh 'docker push nexus.cicd.svc.cluster.local:5000/tomcat-signup'
+                sh 'docker tag nginx-signup nexus.cicd.svc.cluster.local:5000/nginx-signup'
+                sh 'docker push nexus.cicd.svc.cluster.local:5000/nginx-signup'
+
+                sh 'docker tag nginx-youtube nexus.cicd.svc.cluster.local:5000/nginx-youtube' 
+                sh 'docker push nexus.cicd.svc.cluster.local:5000/nginx-youtube'
+            }
+        }
+
+        stage('Pod Deployment') {
+            container('kubectl') {
+                sh 'kubectl get node'
+                //sh 'kubectl delete -f /CI-CD/signup-app/yaml/tomcat/tomcat-deployment.yaml'
+                //sh 'kubectl delete -f /CI-CD/signup-app/yaml/nginx/nginx-deployment.yaml'
+
+                sh 'kubectl apply -f /CI-CD/signup-app/yaml/ingress.yaml'
+                sh 'kubectl apply -f /CI-CD/signup-app/yaml/tomcat/tomcat-service.yaml'
+                sh 'kubectl apply -f /CI-CD/signup-app/yaml/tomcat/tomcat-deployment.yaml'
+                sh 'kubectl rollout restart deployment tomcat-deployment -n ajp-namespaces'
+
+                sh 'kubectl apply -f /CI-CD/signup-app/yaml/nginx/nginx-configmap.yaml'
+                sh 'kubectl apply -f /CI-CD/signup-app/yaml/nginx/nginx-service.yaml'
+                sh 'kubectl apply -f /CI-CD/signup-app/yaml/nginx/nginx-deployment.yaml'
+                sh 'kubectl rollout restart deployment hello-nginx -n ajp-namespaces'
+
+                sh 'kubectl apply -f /CI-CD/youtube-app/yaml/youtube-nginx-service.yaml'
+	            sh 'kubectl apply -f /CI-CD/youtube-app/yaml/youtube-nginx-deployment.yaml'
+	            sh 'kubectl rollout restart deployment youtube-nginx -n ajp-namespaces'
+            }
+        }
+
+        stage('END') {
+            container('kubectl') { 
+                sh 'echo The END'
+            }
+        }*/
+    }
+}

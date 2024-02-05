@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: youtube-nginx
+  namespace: ajp-namespaces
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  replicas: 3
+  selector:
+    matchLabels:
+      app: youtube-nginx
+  template:
+    metadata:
+      labels:
+        app: youtube-nginx
+    spec:
+      containers:
+        - name: youtube-nginx
+          image: nexus.cicd.svc.cluster.local:5000/nginx-youtube
+          ports:
+            - containerPort: 80
+      nodeSelector:
+        key: worker
